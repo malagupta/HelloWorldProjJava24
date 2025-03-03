@@ -14,10 +14,13 @@ This repository hosts code samples included in the following blog posts:
     3. [Treasure Hunt](https://github.com/malagupta/HelloWorldProjJava24/blob/master/src/TreasureHunt.java) – Find the location of the hidden treasure.
     4. [Rock-Papper-Scissors](https://github.com/malagupta/HelloWorldProjJava24/blob/master/src/RockPaperScissorsSwingUI.java) – Who hasn’t played this classic?
     5. [Dots and Boxes](https://github.com/malagupta/HelloWorldProjJava24/blob/master/src/DotsAndBoxes.java) – Join lines to complete boxes and claim territory. 
+            
 
 3. Just for the love of creating games using console and some basic UI :)
-   
-
+   1. Funny Development Paradigms - A fun take on the actual development paradigms. I created two version of this game: 
+      1. [Swing UI based](https://github.com/malagupta/HelloWorldProjJava24/blob/master/src/DevelopmentParadigmGameSwingUI.java)
+      2. [Console based](https://github.com/malagupta/HelloWorldProjJava24/blob/master/src/DevelopmentParadigmGameConsole.java)
+      
 
 ## Author
 

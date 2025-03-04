@@ -20,7 +20,9 @@ This repository hosts code samples included in the following blog posts:
    1. Funny Development Paradigms - A fun take on the actual development paradigms. I created two version of this game: 
       1. [Swing UI based](https://github.com/malagupta/HelloWorldProjJava24/blob/master/src/DevelopmentParadigmGameSwingUI.java)
       2. [Console based](https://github.com/malagupta/HelloWorldProjJava24/blob/master/src/DevelopmentParadigmGameConsole.java)
-      
+   2. Mood-Emoji :)
+      1. MoodArt.java - displays a text based scenery, based on your mood
+      2. SimpleMoodEmoji.java - Draws a simple text based emoji based on your mood 
 
 ## Author
 

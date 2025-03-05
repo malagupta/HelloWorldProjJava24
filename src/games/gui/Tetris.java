@@ -16,21 +16,26 @@ import java.util.Random;
  *  c) rotation, and
  *  d) rendering.
  *  e) It handles user input for moving pieces left/right, rotating pieces, and dropping them quickly.
+ *  f) Removes a horizontal line when it doen't has any missing block
  *
- *  To_FIX: To remove a horizontal line when it doen't has any missing block
+ *  TO_DO:
+ *  i) Display scores
+ *  ii) Stop addition of new pieces when there is no more empty vertical space
  */
+
 public class Tetris extends JPanel implements ActionListener {
     private final int BOARD_WIDTH = 10;
     private final int BOARD_HEIGHT = 20;
     private final int BLOCK_SIZE = 30;
     private Timer timer;
     private int[][] board;
+    private Color[][] colorBoard;
     private int currentX, currentY;
     private int[][] currentPiece;
-    private int currentRotation;
-    private Random random;
     private Color currentColor;
-    private Color[][] colorBoard;
+    private Random random;
+    private boolean clearingLines = false;
+    
     private final int[][][] PIECES = {
         {{1, 1, 1, 1}}, // I-shape
         {{1, 1}, {1, 1}}, // O-shape
@@ -40,6 +45,7 @@ public class Tetris extends JPanel implements ActionListener {
         {{1, 1, 1}, {1, 0, 0}}, // L-shape
         {{1, 1, 1}, {0, 0, 1}} // J-shape
     };
+    
     private final Color[] COLORS = {Color.CYAN, Color.YELLOW, Color.MAGENTA, Color.GREEN, Color.RED, Color.ORANGE, Color.BLUE};
 
     public Tetris() {
@@ -55,14 +61,16 @@ public class Tetris extends JPanel implements ActionListener {
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                    movePiece(-1);
-                } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                    movePiece(1);
-                } else if (e.getKeyCode() == KeyEvent.VK_UP) {
-                    rotatePiece();
-                } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
-                    dropPiece();
+                if (!clearingLines) {
+                    if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                        movePiece(-1);
+                    } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                        movePiece(1);
+                    } else if (e.getKeyCode() == KeyEvent.VK_UP) {
+                        rotatePiece();
+                    } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                        dropPiece();
+                    }
                 }
             }
         });
@@ -74,7 +82,6 @@ public class Tetris extends JPanel implements ActionListener {
         currentColor = COLORS[pieceIndex];
         currentX = BOARD_WIDTH / 2 - currentPiece[0].length / 2;
         currentY = 0;
-        currentRotation = 0;
     }
 
     private void movePiece(int dx) {
@@ -104,13 +111,41 @@ public class Tetris extends JPanel implements ActionListener {
         return rotated;
     }
 
+    private void dropPiece() {
+        while (isValidMove(currentX, currentY + 1, currentPiece)) {
+            currentY++;
+        }
+        placePiece();
+        checkForFullLines();
+        spawnPiece();
+        repaint();
+    }
+
+    private void placePiece() {
+        for (int row = 0; row < currentPiece.length; row++) {
+            for (int col = 0; col < currentPiece[row].length; col++) {
+                if (currentPiece[row][col] != 0) {
+                    int boardX = currentX + col;
+                    int boardY = currentY + row;
+                    if (boardY >= 0) {
+                        board[boardY][boardX] = 1;
+                        colorBoard[boardY][boardX] = currentColor;
+                    }
+                }
+            }
+        }
+    }
+
     private boolean isValidMove(int x, int y, int[][] piece) {
         for (int row = 0; row < piece.length; row++) {
             for (int col = 0; col < piece[row].length; col++) {
                 if (piece[row][col] != 0) {
                     int newX = x + col;
                     int newY = y + row;
-                    if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT || board[newY][newX] != 0) {
+                    if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
+                        return false;
+                    }
+                    if (newY >= 0 && board[newY][newX] != 0) {
                         return false;
                     }
                 }
@@ -119,37 +154,76 @@ public class Tetris extends JPanel implements ActionListener {
         return true;
     }
 
-    private void dropPiece() {
-        while (isValidMove(currentX, currentY + 1, currentPiece)) {
-            currentY++;
+    private void checkForFullLines() {
+        for (int row = 0; row < BOARD_HEIGHT; row++) {
+            boolean fullLine = true;
+            for (int col = 0; col < BOARD_WIDTH; col++) {
+                if (board[row][col] == 0) {
+                    fullLine = false;
+                    break;
+                }
+            }
+            if (fullLine) {
+                removeFullLine(row);
+            }
         }
-        placePiece();
-        spawnPiece();
-        repaint();
+    }
+
+    private void removeFullLine(int row) {
+        for (int r = row; r > 0; r--) {
+            board[r] = board[r - 1].clone();
+            colorBoard[r] = colorBoard[r - 1].clone();
+        }
+        board[0] = new int[BOARD_WIDTH];
+        colorBoard[0] = new Color[BOARD_WIDTH];
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (isValidMove(currentX, currentY + 1, currentPiece)) {
-            currentY++;
-        } else {
-            placePiece();
-            spawnPiece();
+        if (!clearingLines) {
+            if (isValidMove(currentX, currentY + 1, currentPiece)) {
+                currentY++;
+            } else {
+                placePiece();
+                checkForFullLines();
+                spawnPiece();
+            }
+            repaint();
         }
-        repaint();
     }
 
-    private void placePiece() {
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        for (int row = 0; row < BOARD_HEIGHT; row++) {
+            for (int col = 0; col < BOARD_WIDTH; col++) {
+                if (board[row][col] != 0) {
+                    g.setColor(colorBoard[row][col]);
+                    g.fillRect(col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    g.setColor(Color.BLACK);
+                    g.drawRect(col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                }
+            }
+        }
+
+        // Draw current falling piece
+        g.setColor(currentColor);
         for (int row = 0; row < currentPiece.length; row++) {
             for (int col = 0; col < currentPiece[row].length; col++) {
                 if (currentPiece[row][col] != 0) {
-                    board[currentY + row][currentX + col] = 1;
-                    colorBoard[currentY + row][currentX + col] = currentColor;
+                    int x = (currentX + col) * BLOCK_SIZE;
+                    int y = (currentY + row) * BLOCK_SIZE;
+                    g.fillRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+                    g.setColor(Color.BLACK);
+                    g.drawRect(x, y, BLOCK_SIZE, BLOCK_SIZE);
+                    g.setColor(currentColor);
                 }
             }
         }
     }
 
+/*
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -161,20 +235,22 @@ public class Tetris extends JPanel implements ActionListener {
                 }
             }
         }
-        g.setColor(currentColor);
-        for (int row = 0; row < currentPiece.length; row++) {
-            for (int col = 0; col < currentPiece[row].length; col++) {
-                if (currentPiece[row][col] != 0) {
-                    g.fillRect((currentX + col) * BLOCK_SIZE, (currentY + row) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        if (currentPiece != null) {
+            g.setColor(currentColor);
+            for (int row = 0; row < currentPiece.length; row++) {
+                for (int col = 0; col < currentPiece[row].length; col++) {
+                    if (currentPiece[row][col] != 0) {
+                        g.fillRect((currentX + col) * BLOCK_SIZE, (currentY + row) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    }
                 }
             }
         }
     }
+*/
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Tetris Clone");
-        Tetris game = new Tetris();
-        frame.add(game);
+        frame.add(new Tetris());
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);

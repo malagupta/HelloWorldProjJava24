@@ -1,4 +1,3 @@
-
 void main() {
     String[] words = {"java", "programming", "computer", "algorithm", "developer"};
     String targetWord = words[(int) (Math.random() * words.length)];
